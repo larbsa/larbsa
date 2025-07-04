@@ -25,7 +25,7 @@ python3 -m animate
 
 ## Quick Compare
 The goal of this mode is to quickly compare the performance of different algorithms.
-A table will be produced, presenting various metrics
+A table will be produced, presenting various metrics.
 
 You can run it like so:
 
@@ -48,10 +48,10 @@ The seed, alongside fields like *gridSize* can be used to reproduce the tests.
 To allow for flexibility, the tests are defined in a yaml file. 
 You can find an example in *./testConfig.yaml*.
 
-The following fields are only valid for 'type' of robustness:
-    - *densityStart*: what density to start from
-    - *densityIncrimentAfter*: after N interations, the density should be increased
-    - *densityIncriment*: after N interations, the density should be increased by the value defined here
+The following fields are only valid for 'type' of *robustness*:
+1. *densityStart*: what density to start from
+2. *densityIncrimentAfter*: after N interations, the density should be increased
+3. *densityIncriment*: after N interations, the density should be increased by the value defined here
 
 In the case that the test terminates unintentionally, the 'tests can continue where they left' of as they simply
 append to the output csv files, rather than overriding them. This assuming that the name of the test does not change.
