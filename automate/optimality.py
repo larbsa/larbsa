@@ -4,24 +4,7 @@ Credit to: https://gist.github.com/josiahcarlson/904686
 import random
 import sys
 import math
-sys.path.append("/Users/momodoubah/research/catkin_ws/src/mitad/src")
 from utility.turn import getDistance
-from utility.util import sendRaw
-# from algorithms.automate.efficiency import getBorder
-# random.seed(0.962819794903226)
-# print(random.getstate())
-'''
-0.24975077935850032 -> This is a problem for mg4 for the 17th iteration
-This is an implementation of the Recursive Division algorithm for maze
-generation, primarily derived from the algorithm presented here:
-http://weblog.jamisbuck.org/2011/1/12/maze-generation-recursive-division-algorithm
-The input grid can be generated via:
-  grid = [width*[0] for i in xrange(height)]
-The initial call should be of the form:
-  divide(grid, 0, 0, width, height)
-The meanings of the entries are the same as is described in Jamis Buck's other
-maze articles.
-'''
 
 N, S, E, W = 1, 2, 4, 8
 HORIZONTAL, VERTICAL = 0, 1

@@ -1,7 +1,5 @@
 import sys
 import random
-# sys.path.append("/Users/momodoubah/research/catkin_ws/src/mitad/src")
-from utility.util import sendRaw, convertIntoKeysRaw
 from utility.turn import getDistance
 from automate.prims import produceMaze
 

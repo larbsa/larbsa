@@ -39,9 +39,10 @@ def sendData (socketInformation, gridMap, start, end):
     parentStringEdition = convertTreeToUniqueList(gridMap)
 
     if 'sleepDuration' in socketInformation:
+        print('sleeping for:', socketInformation['sleepDuration'])
         time.sleep(socketInformation['sleepDuration'])
 
-    socketInformation['io'].emit('message', { 'meta':{'algorithm':'SPFA',  'visitSize':len(gridMap) }, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'path':path, 'barriers':socketInformation.get('stringBarriers'), 'visited':parentStringEdition })
+    socketInformation['io'].emit('algorithm_response', { 'from':'c', 'meta':{'algorithm':'SPFA',  'visitSize':len(gridMap) }, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'path':path, 'barriers':socketInformation.get('stringBarriers'), 'visited':parentStringEdition })
 
 def getNeighbours (node, obstacles, gridSize):
     originals = (

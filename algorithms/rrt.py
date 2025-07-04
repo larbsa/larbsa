@@ -57,7 +57,7 @@ def sendData (socketInformation, parents, startNode, goalNode):
     if 'sleepDuration' in socketInformation:
         time.sleep(socketInformation['sleepDuration'])
 
-    socketInformation['io'].emit('message', { 'meta':{'algorithm':'RRT',  'visitSize':len(parents) }, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'path':path, 'barriers':socketInformation.get('stringBarriers'), 'visited':parentStringEdition })
+    socketInformation['io'].emit('algorithm_response', { 'meta':{'algorithm':'RRT',  'visitSize':len(parents) }, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'path':path, 'barriers':socketInformation.get('stringBarriers'), 'visited':parentStringEdition })
 
 
 def distanceApart (cordA, cordB):
@@ -75,10 +75,10 @@ def findNearestParent (parents, startNode, node):
 
     return closestNode
 
-def rrt (parentBlock, start, end, obstacles, gridSize, maxIterations, socketInformation=None):
-    index = 0
-    while index <= maxIterations:
-        index+=1
+def rrt (parentBlock, start, end, obstacles, gridSize, maxIterations=1000000000, socketInformation=None):
+
+    while maxIterations >= 0:
+        maxIterations-=1
         newRandomPosition = getRandomPosition(gridSize, gridSize)
         parentNode = findNearestParent(parentBlock, start, newRandomPosition)
         valid = nodeIsValid(parentBlock, newRandomPosition, obstacles, gridSize, gridSize)

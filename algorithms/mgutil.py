@@ -1,4 +1,5 @@
-import heapq
+import time
+from utility.util import keysVersion
 def extractPathCompare (end, nodes, reverse=True):
     currentlyAt = end
     path = [end]
@@ -193,3 +194,44 @@ def extractPath (end, nodes, reverse=True):
 
 
     return path[::-1] if reverse else path
+
+
+def extractPathSimple (end, nodes, reverse=True):
+    currentlyAt = end
+    path = [end]
+    while currentlyAt in nodes and nodes[currentlyAt] != None:
+
+        child = nodes[currentlyAt]
+        path.append(child)
+        currentlyAt = child
+
+
+    return path[::-1] if reverse else path
+
+
+def sendData (socketInformation, currents, traces, reserves, simpleRetrace=True):
+
+    if socketInformation == None:
+        return
+
+    if 'io' not in socketInformation:
+        return
+
+    extractFunc = extractPathSimple if simpleRetrace else extractPath
+    path = extractFunc(currents[0]['value'], traces[0]) + extractFunc(currents[1]['value'], traces[1], False)
+    path = keysVersion(path)
+    parentStringEdition = {**keysVersion({**traces[0], **traces[1]}), **keysVersion(reserves[0] + reserves[1])}
+
+    if 'sleepDuration' in socketInformation:
+        time.sleep(socketInformation['sleepDuration'])
+
+    socketInformation['io'].emit('algorithm_response', 
+        { 'meta':
+            { 'algorithm': socketInformation['algo'], 'visitSize':len(traces[0]) + len(traces[1]) }, 
+            'gridSize':socketInformation.get('gridSize'), 
+            'id':socketInformation.get('id'), 
+            'path':path, 
+            'barriers':socketInformation.get('stringBarriers'), 
+            'visited':parentStringEdition
+        }
+    )

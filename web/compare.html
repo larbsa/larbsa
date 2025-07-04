@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
     <title>Document</title>
     <script>
-        const socket = io('http://localhost:9000');
+        const socket = io('http://0.0.0.0:5005');
 
         socket.on('connect', () => {
             console.log('Connected to Socket.IO server');
@@ -70,13 +70,13 @@
 
             <option value="Single Instance Lee algorithm">Single Instance Lee algorithm</option>
             <option value="Single Instance Lee algorithm (Pruned)">Single Instance Lee algorithm (Pruned)</option>
-            <option value="Magnetic Algorithm 4 Options">Magnetic Algorithm 4 Options</option>
-            <option value="Magnetic Algorithm 4 Options JPS Pruning">Magnetic Algorithm 4 Options JPS Pruning</option>
-            <option value="Magnetic Algorithm 4 Options (Pruned)">Magnetic Algorithm 4 Options (Pruned)</option>
-            <option value="Magnetic Algorithm 4 Options (Pruned) (With spacing)">Magnetic Algorithm 4 Options (Pruned) (With spacing)</option>
-            <option value="Magnetic Algorithm 4 Options Pythag">Magnetic Algorithm 4 Options Pythag</option>
-            <option value="Magnetic Algorithm 8 Options">Magnetic Algorithm 8 Options</option>
-            <option value="Magnetic Algorithm 8 Options (Pruning and spacing, for robot)">Magnetic Algorithm 8 Options (Pruning and spacing, for robot)</option>
+            <option value="larbsa">Larbsa 4 Options</option>
+            <!-- <option value="Magnetic Algorithm 4 Options JPS Pruning">Magnetic Algorithm 4 Options JPS Pruning</option> -->
+            <!-- <option value="Magnetic Algorithm 4 Options (Pruned)">Magnetic Algorithm 4 Options (Pruned)</option> -->
+            <!-- <option value="Magnetic Algorithm 4 Options (Pruned) (With spacing)">Magnetic Algorithm 4 Options (Pruned) (With spacing)</option> -->
+            <!-- <option value="Magnetic Algorithm 4 Options Pythag">Magnetic Algorithm 4 Options Pythag</option> -->
+            <!-- <option value="Magnetic Algorithm 8 Options">Magnetic Algorithm 8 Options</option> -->
+            <!-- <option value="Magnetic Algorithm 8 Options (Pruning and spacing, for robot)">Magnetic Algorithm 8 Options (Pruning and spacing, for robot)</option> -->
             <option value="Lee algorithm">Lee algorithm</option>
             <option value="A* algorithm">A* algorithm</option>
             <option value="Dual A* algorithm">Dual A* algorithm</option>
@@ -176,7 +176,7 @@
 
                     if (name==='Single Instance Lee algorithm') algorithms.push('sh')
                     if (name==='Single Instance Lee algorithm (Pruned)') algorithms.push('shp')
-                    if (name==='Magnetic Algorithm 4 Options') algorithms.push('m4')
+                    if (name==='larbsa') algorithms.push('larbsa')
                     if (name==='Magnetic Algorithm 4 Options JPS Pruning') algorithms.push('m4New')
                     if (name==='Magnetic Algorithm 4 Options (Pruned)') algorithms.push('m4p')
                     if (name==='Magnetic Algorithm 4 Options (Pruned) (With spacing)') algorithms.push('m4ps')
@@ -401,11 +401,11 @@
 
     produceEntireContent()
 
-    socket.on('message', (incoming) => {
+    socket.on('algorithm_response', (incoming) => {
+        console.log('reacting to:', 'algorithm_response', incoming)
         if (incoming.hasOwnProperty('nonprocessing')) return
         updateSingleItem(data, incoming)
     });
-
 
     </script>
 </body>

@@ -1,7 +1,8 @@
 import heapq
 import math
 import time
-
+import eventlet
+eventlet.monkey_patch()
 DIRECTIONS = [
     (0, 1), (1, 0), (0, -1), (-1, 0),
     (1, 1), (-1, 1), (-1, -1), (1, -1)
@@ -193,9 +194,10 @@ def sendData (socketInformation, cameFrom, startNode):
     parentStringEdition = convertTreeToUniqueList(cameFrom)
 
     if 'sleepDuration' in socketInformation:
+        # eventlet.sleep(0.5)
         time.sleep(socketInformation['sleepDuration'])
 
-    socketInformation['io'].emit('message', { 'meta':{'algorithm':'JPS',  'visitSize':len(cameFrom) }, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'path':path, 'barriers':socketInformation.get('stringBarriers'), 'visited':parentStringEdition })
+    socketInformation['io'].emit('algorithm_response', { 'meta':{'algorithm':'JPS',  'visitSize':len(cameFrom) }, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'path':path, 'barriers':socketInformation.get('stringBarriers'), 'visited':parentStringEdition })
 
 def jps(start, goal, obstacles, gridSize, socketInformation=None):
     heap = []
@@ -221,21 +223,6 @@ def jps(start, goal, obstacles, gridSize, socketInformation=None):
                     cost_so_far[jp] = new_cost
                     priority = new_cost + heuristic(jp, goal)
                     heapq.heappush(heap, (priority, new_cost, jp, current))
-                    came_from[jp] = current
-
-        # # deal with situation where all jump points failed
-        # if not found_jump:
-        #     # print('exploring options since everything else failed for:', current)
-        #     for dx, dy in DIRECTIONS:
-        #         jp = jump(current, (dx, dy), goal, obstacles, gridDimensions)
-        #         if jp:
-        #             # print("added this to closed list:", jp)
-        #             found_jump = True
-        #             tentative_g = g_score[current] + math.hypot(jp[0] - current[0], jp[1] - current[1])
-        #             if jp not in g_score or tentative_g < g_score[jp]:
-        #                 g_score[jp] = tentative_g
-        #                 f_score = tentative_g + heuristic(jp, goal)
-        #                 heapq.heappush(open_set, (f_score, tentative_g, jp, current))
-        #                 came_from[jp] = current            
+                    came_from[jp] = current        
 
     return None, came_from  # No path found

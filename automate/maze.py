@@ -1,7 +1,6 @@
 import sys
 import random
 import time
-sys.path.append("/Users/momodoubah/research/catkin_ws/src/mitad/src")
 from utility.util import sendRaw, convertIntoKeysRaw
 
 def getOptions (current):

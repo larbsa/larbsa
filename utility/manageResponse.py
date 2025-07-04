@@ -3,7 +3,7 @@ from utility.turn import getDistance
 import math
 import sys
 # import rospy
-sys.path.append("/Users/momodoubah/research/catkin_ws/src/mitad/src")
+sys.path.append("path to ros <project>/src")
 
 
 def responseToOdom(msg, currentPosition, initialPosition, blockSize):

@@ -19,7 +19,23 @@ def findPath (start, end, came_from):
     path.append(start)
     return (path[::-1], came_from)    
 
-def astar_algorithm(barriers, start, end, maxIterations=1000, socketInformation=None):
+def sendData (socketInformation, path, cameFrom):
+
+    if socketInformation == None:
+        return
+
+    if 'io' not in socketInformation:
+        return
+
+    path = keysVersion(path)
+    parentStringEdition = keysVersion(cameFrom)
+
+    if 'sleepDuration' in socketInformation:
+        time.sleep(socketInformation['sleepDuration'])
+
+    socketInformation['io'].emit('algorithm_response', { 'meta':{'algorithm': socketInformation['algo'],  'visitSize':len(cameFrom) }, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'path':path, 'barriers':socketInformation.get('stringBarriers'), 'visited':parentStringEdition })
+
+def astar_algorithm(barriers, start, end, maxIterations=1000000000, socketInformation=None):
     heap = []
     tempHeap = [] if socketInformation else None
     heapq.heappush(heap, (0, start))
@@ -28,7 +44,7 @@ def astar_algorithm(barriers, start, end, maxIterations=1000, socketInformation=
     came_from[start] = None
     cost_so_far[start] = 0
     
-    while heap and maxIterations >= 1000:
+    while heap and maxIterations >= 0:
         current = heapq.heappop(heap)[1]
         if current == end or current == None:
             break
@@ -43,10 +59,7 @@ def astar_algorithm(barriers, start, end, maxIterations=1000, socketInformation=
                     tempHeap.append(neighbor)
                 came_from[neighbor] = current
 
-        if socketInformation != None and 'io' in socketInformation:
-            if 'sleepDuration' in socketInformation:
-                time.sleep(socketInformation['sleepDuration'])
-            socketInformation['io'].emit('message', { 'meta':{'algorithm':'A2 algorithm', 'visitSize':len(tempHeap)}, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':{}, 'visited':{ f'{x[0]}:{x[1]}':None for x in tempHeap} })
+        sendData(socketInformation, [], came_from)
 
         maxIterations -= 1
         
@@ -58,17 +71,10 @@ def astar_algorithm(barriers, start, end, maxIterations=1000, socketInformation=
     while current != start:
         path.append(current)
         current = came_from[current]
-        
-        if socketInformation != None and 'io' in socketInformation:
-            if 'sleepDuration' in socketInformation:
-                time.sleep(socketInformation['sleepDuration'])            
-            socketInformation['io'].emit('message', { 'meta':{'algorithm':'A2 algorithm', 'visitSize':len(tempHeap)}, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':{f'{x[0]}:{x[1]}':None for x in path}, 'visited':{ f'{x[0]}:{x[1]}':None for x in tempHeap} })
+        sendData(socketInformation, path, came_from)        
 
     path.append(start)
-    if socketInformation != None and 'io' in socketInformation:
-        if 'sleepDuration' in socketInformation:
-            time.sleep(socketInformation['sleepDuration'])            
-        socketInformation['io'].emit('message', { 'meta':{'algorithm':'A2 algorithm', 'visitSize':len(tempHeap)}, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':{f'{x[0]}:{x[1]}':None for x in path}, 'visited':{ f'{x[0]}:{x[1]}':None for x in tempHeap} })
+    sendData(socketInformation, path, came_from)
 
     return (path[::-1], came_from)
 

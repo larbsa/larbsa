@@ -37,7 +37,7 @@ def keysVersion (arr, appen=False):
 
 #     return path[::-1]
 
-def heuristic(start, end, barriers, maxIterations = 100000, socketInformation=None): #function for something else
+def heuristic(start, end, barriers, maxIterations = 1000000000, socketInformation=None): #function for something else
     global obstacles
     global queue
     global visitedTrace
@@ -98,7 +98,7 @@ def heuristic(start, end, barriers, maxIterations = 100000, socketInformation=No
             if 'sleepDuration' in socketInformation:
                 time.sleep(socketInformation['sleepDuration'])
             path = extractPath(current, visitedTrace)
-            socketInformation['io'].emit('message', { 'meta':{'algorithm':'Single instance Lee (Pruned)', 'iterationCount':maxIterations}, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':{ f'{x[0]}:{x[1]}':None for x in path }, 'visited': { f'{x[0]}:{x[1]}':None for x in visitedTrace } })
+            socketInformation['io'].emit('algorithm_response', { 'meta':{'algorithm':'Single instance Lee (Pruned)', 'iterationCount':maxIterations}, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':{ f'{x[0]}:{x[1]}':None for x in path }, 'visited': { f'{x[0]}:{x[1]}':None for x in visitedTrace } })
 
             
         maxIterations -= 1
@@ -108,6 +108,6 @@ def heuristic(start, end, barriers, maxIterations = 100000, socketInformation=No
 
     path = extractPath(end, visitedTrace)
     if socketInformation != None and 'io' in socketInformation:
-        socketInformation['io'].emit('message', { 'meta':{'algorithm':'Single instance Lee (Pruned)', 'iterationCount':maxIterations}, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':{ f'{x[0]}:{x[1]}':None for x in path }, 'visited': { f'{x[0]}:{x[1]}':None for x in visitedTrace } })
+        socketInformation['io'].emit('algorithm_response', { 'meta':{'algorithm':'Single instance Lee (Pruned)', 'iterationCount':maxIterations}, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':{ f'{x[0]}:{x[1]}':None for x in path }, 'visited': { f'{x[0]}:{x[1]}':None for x in visitedTrace } })
 
     return (path, list(visitedTrace)+reserves)

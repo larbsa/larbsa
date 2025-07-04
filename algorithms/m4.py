@@ -1,5 +1,6 @@
-from algorithms.mgutil import extractPath
-
+from algorithms.mgutil import extractPathSimple, sendData
+import eventlet
+eventlet.monkey_patch()
 import time
 # import rospy
 
@@ -30,67 +31,6 @@ def keysVersion (arr, appen=False):
         else:
             obj[f'{x[0]}:{x[1]}']=None
     return obj
-
-def extractPath (end, nodes, reverse=True):
-    currentlyAt = end
-    path = [end]
-    while currentlyAt in nodes and nodes[currentlyAt] != None:
-        
-        # Line added for update
-        parent = currentlyAt
-        # Line above added for update
-
-        child = nodes[currentlyAt]
-        path.append(child)
-        currentlyAt = child
-
-        # Lines below added for update
-
-        if nodes[currentlyAt] == None:
-            continue
-        
-        # look the left, right, top and bottom
-        # disregard parent, since it will be one of those nodes
-        # we will compare default node with another node that might be of interest if it exists
-        
-        # left = (child[0]+1,  child[1]) 
-        # right = (child[0]-1,  child[1]) 
-        # top = (child[0],  child[1]+1) 
-        # bottom = (child[0],  child[1]-1) 
-
-        # if left in nodes:
-        #     if left != parent:
-        #         if nodes[child] != left:
-        #             path.append(left)
-        #             currentlyAt = left
-        #             continue
-
-        # if right in nodes:
-        #     if right != parent:
-        #         if nodes[child] != right:
-        #             path.append(right)
-        #             currentlyAt = right
-        #             continue
-
-        # if top in nodes:
-        #     if top != parent:
-        #         if nodes[child] != top:
-        #             path.append(top)
-        #             currentlyAt = top
-        #             continue     
-
-        # if bottom in nodes:
-        #     if bottom != parent:
-        #         if nodes[child] != bottom:
-        #             path.append(bottom)
-        #             currentlyAt = bottom
-        #             continue                                
-
-        # Lines above added for update
-
-
-
-    return path[::-1] if reverse else path
 
 def extractPathShorter (end, nodes, reverse=True):
     currentlyAt = end
@@ -126,7 +66,7 @@ def extractPathShorter (end, nodes, reverse=True):
 
         currentlyAt = nodes[currentlyAt]
         index+=1
-    return path[::-1] if reverse else path    
+    return path[::-1] if reverse else path
 
 # def runSingleIteration (currentInfo, queue, reserves, visitedTrace, visited, vistedNext, end, obstacles):
 def runSingleIteration (currentInfo, queue, reserves, visitedTrace, vistedNext, end, obstacles):
@@ -187,7 +127,7 @@ def distanceApart (cordA, cordB):
 def convertTracesIntoSingleObj (traces):
     return { f'{x[0]}:{x[1]}':None for x in list(traces[0]) + list(traces[1]) }
 
-def heuristic(start, end, barriers, maxIterations=100000, animate=False, socketInformation=None): #function for something else
+def heuristic(start, end, barriers, maxIterations=1000000000, animate=False, socketInformation=None, sendAlgorithmInfo=None): #function for something else
     global obstacles
     obstacles = barriers
     queue = ([start], [end])
@@ -201,7 +141,6 @@ def heuristic(start, end, barriers, maxIterations=100000, animate=False, socketI
     while maxIterations >= 0 and len(queue[0]) and len(queue[1]) and distanceApart(currents[0]['value'], currents[1]['value']) > 1:
         try:
             nextIndex = (index+1) % 2
-            # status = runSingleIteration (currents[index], queue[index], reserves[index], traces[index], visited[index], visited[nextIndex], currents[nextIndex]['value'], obstacles)
             status = runSingleIteration (currents[index], queue[index], reserves[index], traces[index], traces[nextIndex], currents[nextIndex]['value'], obstacles)
             if status == 1:
                 restarts+=1
@@ -209,47 +148,39 @@ def heuristic(start, end, barriers, maxIterations=100000, animate=False, socketI
                 return ([], [], "")
             if type(status) == tuple:
                 
-                if distanceApart(currents[0]['value'], currents[1]['value']) <= 2:
+                if distanceApart(currents[0]['value'], currents[1]['value']) <= 1:
                     inRange = True
                     
                 mergePoint = status
+                currents[nextIndex]['value'] = mergePoint
                 break
-
-            if socketInformation != None:
-                if 'sleepDuration' in socketInformation:
-                    time.sleep(socketInformation['sleepDuration'])
-                path = extractPath(currents[index]['value'], traces[index]) + extractPath(currents[nextIndex]['value'], traces[nextIndex], False)
-                path = { f'{x[0]}:{x[1]}':None for x in path }
-                if 'io' in socketInformation:
-                    socketInformation['io'].emit('message', { 'meta':{'algorithm':'Magnetic algorithm',  'visitSize':len(traces[0])+len(traces[1])}, 'iterationCount':maxIterations, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'path':path, 'barriers':socketInformation.get('stringBarriers'), 'visited':convertTracesIntoSingleObj(traces) })
+            
+            sendData (socketInformation, currents, traces, reserves)
 
             index = nextIndex
             maxIterations -= 1
-        except:
-            print('something went wrong here instead....')
+        except Exception as e:
+            print('something went wrong here instead....', e)
             return ([], [], "")
 
     if maxIterations <= 0:
         return ([], [], "PASSED-MAX-ITERATIONS")
 
     if mergePoint != None:
-        p1 = extractPath(mergePoint, traces[0])
-        p2 = extractPath(mergePoint, traces[1], False)
+        p1 = extractPathSimple(mergePoint, traces[0])
+        p2 = extractPathSimple(mergePoint, traces[1], False)
 
-        # p2.pop(0) # deals with overlap
-        path = p1 + p2[1:] 
+        path = p1 + p2
 
-        if socketInformation != None and 'io' in socketInformation:
-            tempPath = { f'{x[0]}:{x[1]}':None for x in path }
-            socketInformation['io'].emit('message', { 'meta':{'algorithm':'Magnetic algorithm', 'visitSize':len(traces[0])+len(traces[1])}, 'iterationCount':maxIterations, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':tempPath, 'visited':convertTracesIntoSingleObj(traces) })
+        sendData (socketInformation, currents, traces, reserves)
 
         return (path, list(traces[0])+list(traces[1])+reserves[0]+reserves[1], f"{'MERGEINTRAIL' if not inRange else 'MERGEDIRECT'} R:{restarts}")
 
-    path = extractPath(currents[0]['value'], traces[0]) + extractPath(currents[1]['value'], traces[1], False)
+    path = extractPathSimple(currents[0]['value'], traces[0]) + extractPathSimple(currents[1]['value'], traces[1], False)
+    print('final path:')
+    print(path)
 
-    if socketInformation != None and 'io' in socketInformation:
-        tempPath = { f'{x[0]}:{x[1]}':None for x in path }
-        socketInformation['io'].emit('message', { 'meta':{'algorithm':'Magnetic algorithm', 'visitSize':len(traces[0])+len(traces[1])}, 'iterationCount':maxIterations, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':tempPath, 'visited':convertTracesIntoSingleObj(traces) })
+    sendData (socketInformation, currents, traces, reserves)
 
     return (path, list(traces[0])+list(traces[1])+reserves[0]+reserves[1], f"MERGEDIRECT R:{restarts}")
     

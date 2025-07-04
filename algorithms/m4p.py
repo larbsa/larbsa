@@ -88,7 +88,7 @@ def distanceApart (cordA, cordB):
 def convertTracesIntoSingleObj (traces):
     return { f'{x[0]}:{x[1]}':None for x in list(traces[0]) + list(traces[1]) }
 
-def heuristic(start, end, barriers, maxIterations=100000, animate=False, socketInformation=None): #function for something else
+def heuristic(start, end, barriers, maxIterations=1000000000, animate=False, socketInformation=None): #function for something else
     global obstacles
     obstacles = barriers
     queue = ([start], [end])
@@ -121,7 +121,7 @@ def heuristic(start, end, barriers, maxIterations=100000, animate=False, socketI
                 path = extractPath(currents[index]['value'], traces[index]) + extractPath(currents[nextIndex]['value'], traces[nextIndex], False)
                 path = { f'{x[0]}:{x[1]}':None for x in path }
                 if 'io' in socketInformation:
-                    socketInformation['io'].emit('message', { 'meta':{'algorithm':'Magnetic algorithm (Pruned)', 'visitSize':len(traces[0])+len(traces[1])}, 'iterationCount':maxIterations, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'path':path, 'barriers':socketInformation.get('stringBarriers'), 'visited':convertTracesIntoSingleObj(traces) })
+                    socketInformation['io'].emit('algorithm_response', { 'meta':{'algorithm':'Magnetic algorithm (Pruned)', 'visitSize':len(traces[0])+len(traces[1])}, 'iterationCount':maxIterations, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'path':path, 'barriers':socketInformation.get('stringBarriers'), 'visited':convertTracesIntoSingleObj(traces) })
 
             index = nextIndex
             maxIterations -= 1
@@ -139,7 +139,7 @@ def heuristic(start, end, barriers, maxIterations=100000, animate=False, socketI
 
         if socketInformation != None and 'io' in socketInformation:
             tempPath = { f'{x[0]}:{x[1]}':None for x in path }
-            socketInformation['io'].emit('message', { 'meta':{'algorithm':'Magnetic algorithm (Pruned)', 'visitSize':len(traces[0])+len(traces[1])}, 'iterationCount':maxIterations, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':tempPath, 'visited':convertTracesIntoSingleObj(traces) })
+            socketInformation['io'].emit('algorithm_response', { 'meta':{'algorithm':'Magnetic algorithm (Pruned)', 'visitSize':len(traces[0])+len(traces[1])}, 'iterationCount':maxIterations, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':tempPath, 'visited':convertTracesIntoSingleObj(traces) })
       
         
         return (path, list(traces[0])+list(traces[1])+reserves[0]+reserves[1], f"{'MERGEINTRAIL' if not inRange else 'MERGEDIRECT'} R:{restarts}")
@@ -148,7 +148,7 @@ def heuristic(start, end, barriers, maxIterations=100000, animate=False, socketI
 
     if socketInformation != None and 'io' in socketInformation:
         tempPath = { f'{x[0]}:{x[1]}':None for x in path }
-        socketInformation['io'].emit('message', { 'meta':{'algorithm':'Magnetic algorithm (Pruned)', 'visitSize':len(traces[0])+len(traces[1])}, 'iterationCount':maxIterations, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':tempPath, 'visited':convertTracesIntoSingleObj(traces) })
+        socketInformation['io'].emit('algorithm_response', { 'meta':{'algorithm':'Magnetic algorithm (Pruned)', 'visitSize':len(traces[0])+len(traces[1])}, 'iterationCount':maxIterations, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':tempPath, 'visited':convertTracesIntoSingleObj(traces) })
 
     return (path, list(traces[0])+list(traces[1])+reserves[0]+reserves[1], f"MERGEDIRECT R:{restarts}")
     

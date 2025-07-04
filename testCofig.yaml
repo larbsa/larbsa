@@ -1,0 +1,31 @@
+tests:
+
+  - name: efficiencyTest
+    type: efficiency
+    initialSeed: 0
+    seedIncriment: 10
+    numberOfIterations: 100
+    gridSize: 20
+    multiple-algorithms: '*'
+    skip: false
+
+  - name: optimalityTest
+    type: optimality
+    initialSeed: 0
+    seedIncriment: 10
+    numberOfIterations: 100
+    gridSize: 20
+    multiple-algorithms: '*'
+    skip: false
+
+  - name: robustnessTest
+    type: robustness
+    initialSeed: 0
+    seedIncriment: 1
+    densityStart: 1 # start with density 1
+    densityIncriment: 1 # value to add at each incriment
+    densityIncrimentAfter: 10 # after 10 iterations, increse the density by 1
+    numberOfIterations: 300
+    gridSize: 10
+    multiple-algorithms: '*'
+    skip: false

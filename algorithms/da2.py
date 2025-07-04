@@ -1,14 +1,6 @@
 import heapq
 import time
-
-def keysVersion (arr, appen=False):
-    obj = {} if not appen else []
-    for x in arr:
-        if appen:
-            obj.append(f'{x[0]}:{x[1]}')
-        else:
-            obj[f'{x[0]}:{x[1]}']=None
-    return obj
+from algorithms.a2 import sendData
 
 def findPath (start, end, came_from):
     path = []
@@ -19,7 +11,7 @@ def findPath (start, end, came_from):
     path.append(start)
     return (path[::-1], came_from)    
 
-def dual_astar_algorithm(grid, start, end, maxIterations=1000, socketInformation=None):
+def dual_astar_algorithm(grid, start, end, maxIterations=1000000000, socketInformation=None):
     heaps = ([], [])
     
     tempHeap = [] if socketInformation else None
@@ -42,7 +34,7 @@ def dual_astar_algorithm(grid, start, end, maxIterations=1000, socketInformation
 
     conjoinedPoint = None
 
-    while (heaps[0] or heaps[1]) and conjoinedPoint == None and maxIterations >= 1000:
+    while (heaps[0] or heaps[1]) and conjoinedPoint == None and maxIterations >= 0:
         nextIndex = (index + 1 ) % 2
         current = heapq.heappop(heaps[index])[1] if len(heaps[index]) else None
         if current == destinations[index] or current == None:
@@ -62,12 +54,8 @@ def dual_astar_algorithm(grid, start, end, maxIterations=1000, socketInformation
                     conjoinedPoint = neighbor
 
                 came_from[index][neighbor] = current
-
-        if socketInformation != None and 'io' in socketInformation:
-            if 'sleepDuration' in socketInformation:
-                time.sleep(socketInformation['sleepDuration'])  
-                # 'conjoinedPoint':f'{conjoinedPoint[0]}, {conjoinedPoint[1]}' if conjoinedPoint != None else 'Waiting...'          
-            socketInformation['io'].emit('message', { 'meta':{'algorithm':'A2 algorithm', 'visitSize':len(tempHeap) }, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':{}, 'visited':{ f'{x[0]}:{x[1]}':None for x in tempHeap} })
+        
+        sendData(socketInformation, [], list(came_from[0]) + list(came_from[1]))
 
         maxIterations -= 1
         index = nextIndex
@@ -93,10 +81,7 @@ def dual_astar_algorithm(grid, start, end, maxIterations=1000, socketInformation
         pathB.append(end)
         path = pathA[::-1] + pathB
 
-        if socketInformation != None and 'io' in socketInformation:
-            if 'sleepDuration' in socketInformation:
-                time.sleep(socketInformation['sleepDuration'])            
-            socketInformation['io'].emit('message', { 'meta':{'algorithm':'Dual A2 algorithm', 'visitSize':len(tempHeap)}, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':{f'{x[0]}:{x[1]}':None for x in path}, 'visited':{ f'{x[0]}:{x[1]}':None for x in tempHeap} })
+        sendData(socketInformation, path, list(came_from[0]) + list(came_from[1]))
 
         return (path, { x:None for x in list(came_from[0])+list(came_from[1]) })
 
@@ -106,20 +91,13 @@ def dual_astar_algorithm(grid, start, end, maxIterations=1000, socketInformation
         while current != start:
             path.append(current)
             current = came_from[index][current]
-            
-            if socketInformation != None and 'io' in socketInformation:
-                if 'sleepDuration' in socketInformation:
-                    time.sleep(socketInformation['sleepDuration'])            
-                socketInformation['io'].emit('message', { 'meta':{'algorithm':'Dual A2 algorithm', 'visitSize':len(tempHeap)}, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':{f'{x[0]}:{x[1]}':None for x in path}, 'visited':{ f'{x[0]}:{x[1]}':None for x in tempHeap} })
+
+            sendData(socketInformation, path, list(came_from[0]) + list(came_from[1]))            
 
     path.append(start)
-    if socketInformation != None and 'io' in socketInformation:
-        if 'sleepDuration' in socketInformation:
-            time.sleep(socketInformation['sleepDuration'])            
-        socketInformation['io'].emit('message', { 'meta':{'algorithm':'Dual A2 algorithm', 'visitSize':len(tempHeap)}, 'gridSize':socketInformation.get('gridSize'), 'id':socketInformation.get('id'), 'barriers':socketInformation.get('stringBarriers'), 'path':{f'{x[0]}:{x[1]}':None for x in path}, 'visited':{ f'{x[0]}:{x[1]}':None for x in tempHeap} })
+    sendData(socketInformation, path, list(came_from[0]) + list(came_from[1]))
 
-
-    return (path[::-1], came_from[0])
+    return (path[::-1], {**came_from[0], **came_from[1]})
 
 def get_neighbors(grid, current):
     row, col = current

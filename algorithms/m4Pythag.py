@@ -129,7 +129,7 @@ def runSingleIteration (currentInfo, queue, reserves, visitedTrace, vistedNext, 
 def distanceApart (cordA, cordB):
     return abs(cordA[0]-cordB[0]) + abs(cordA[1]-cordB[1])
 
-def heuristic(start, end, barriers, maxIterations=1000): #function for something else
+def heuristic(start, end, barriers, maxIterations=1000000000, socketInformation=None): #function for something else
     global obstacles
     obstacles = barriers
     queue = ([start], [end])

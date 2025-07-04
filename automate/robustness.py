@@ -1,23 +1,5 @@
 import math
 import random
-# seed = 2
-# Pruning problem with single at 5
-# Problem here: intensity:20, size: 25, seed=
-# random.seed(seed) # size 25, intensity 25 not possible  when seed=15
-# random.seed(0.0329938859085428)
-# print('Current seed - robustness', random.random())
-"""
-position 19,30 could be avoided with areaSize parameter and fitness function
-Seed: 0.24975077935850032
-This seed does a good job of exaggerating the difference between single iteration vs two iterations
-"""
-
-#last: 25
-# 1, 6, 21 -> No path possible
-# 2 -> visits overlay
-# 4, 11, 22, 14 (worst i have seen) -> visits potentially overlay (when visited shared)
-# 12 -> visits potentially overlay (when visited not shared)
-# 9 is really good
 
 def getBorder (d, existing={}, blockMode=True):
     # do top

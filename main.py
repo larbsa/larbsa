@@ -1,294 +1,106 @@
-from progress.bar import Bar
-import os
-from util import getAreaMeta, encodeArray, findRightAngleTurns, commentResults, encodeCord
-from timeit import default_timer as timer
-from automate.efficiency import buildBlockMaze as efficiencyGrid
-from automate.optimality import produceGrid as optimalityGrid
-from automate.robustness import produceRandomMaze
+# sets the import from position throughout entire project
+import argparse
+import sys
+from pathlib import Path
+topDirectory = Path(__file__).resolve().parents[0]
+sys.path.append(topDirectory)
 
-from algorithms.sh import heuristic
-from algorithms.shp import heuristic as singlePruned
-from algorithms.m4New_ignore import heuristic as magnetic4
-from algorithms.m4Pythag import heuristic as magenticPythag
-from algorithms.m8 import heuristic as magnetic8
-from algorithms.m4p import heuristic as magnetic4Pruned
-from algorithms.m4ps import heuristic as magnetic4PrunedSpace
-from algorithms.m8ps import heuristic as magnetic8Prunedspace
+from utility.runs import runTestCaseForAllAlgorithms, runAnimate, algorithmCodeNameMap, retrieveTestCasesFromConfig, runSingleTestCase
+import socketio
+import threading
 
-from algorithms.lee import lee_algorithm
-from algorithms.a2 import astar_algorithm
-from algorithms.da2 import dual_astar_algorithm
+from tabulate import tabulate
+import socketio
+import eventlet
+import socketio
 
-from algorithms.rrt import rrtRunner
-from algorithms.jps import jps
-from algorithms.bellmanford import spfa
+algorithmCodeNameMapString = ""
+for code in algorithmCodeNameMap:
+    algorithmCodeNameMapString += f'{code} - {algorithmCodeNameMap[code]}'
+    algorithmCodeNameMapString += " | "
 
-import secrets
-import tracemalloc
+parser = argparse.ArgumentParser(description="Path finding comparison")
+parser.add_argument("--mode", "-m", required=True, choices=["animate", "quick-compare", "record-tests"], help="Mode to run script in\n. animate - opens socket io client, which can then be used to send path information onto web UI. single - runs a single test")
+parser.add_argument("--grid-type", "-t", choices=["efficiency", "robustness", "optimality"], default="efficiency", help="The type of grid to work with")
+parser.add_argument("--grid-size", "-s", type=int, default=5, help="The number of rows and columns of your grid")
+parser.add_argument("--grid-density", "-d", type=int, default=5, help="Describes the ratio of obstacles to free space there should be in the grid, only for grid type of 'robustness'")
+parser.add_argument("--grid-seed", "-e", type=int, default=None, help="Describes which random to seed to use")
+parser.add_argument("--grid-algorithms", "-a", default=[], choices=["*"]+list(algorithmCodeNameMap), nargs="+", help=f"Defines which algorithms to run. {algorithmCodeNameMapString}")
+parser.add_argument("--test-config", "-c", help="file path to retrieve test config")
 
-def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, gridSize=100, comment=True):
+args = parser.parse_args()
 
-    originalBarriers = barriers.copy()
+if args.mode == "animate":
 
-    path = []
+    print('Animate new mode in progress')
+    runningData = { 'running': False }
 
-    message = ''
-    if algorithm == 'da2':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits ) = dual_astar_algorithm(originalBarriers, start, end, maxIterations=1000000)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
+    sio = socketio.Server(cors_allowed_origins="*")
+    app = socketio.WSGIApp(sio, static_files={
+        '/': {'content_type': 'text/html', 'filename': './web/compare.html'}
+    })
 
-    elif algorithm == 'a2':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits ) = astar_algorithm(originalBarriers, start, end, maxIterations=1000000)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
+    @sio.event
+    def connect(sid, environ):
+        print('connect ', sid)
 
-    elif algorithm == 'lee':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits ) = lee_algorithm(originalBarriers, start, end, maxIterations=1000000)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
+    # @sio.event
+    # def algorithm_response(sid, data):
+    #     sio.emit('algorithm_response', data)    
 
-    elif algorithm == 'sh':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits ) = heuristic(start, end, originalBarriers)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
+    @sio.event
+    def message(sid, data):
+        # sio.emit('emit', data)
+        if runningData['running']:
+            return
+        if 'nonprocessing' not in data:
+            return
+        runAnimate (sio, threading, runningData, data['algorithms'], data['gridSize'], data['rosbustnessLevel'], data['testType'], None if 'seedValue' not in data else data['seedValue'], 0.05 if 'delay' not in data else data['delay'])
+        # print('message ', data)
 
-    elif algorithm == 'shp':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits ) = singlePruned(start, end, originalBarriers)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
+    @sio.event
+    def disconnect(sid):
+        print('disconnect ', sid)
 
-    elif algorithm == 'm4':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits, message ) = magnetic4(start, end, originalBarriers, gridDimensions={'x':gridSize, 'y':gridSize}, maxIterations=10000000000)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
+    if __name__ == '__main__':
+        eventlet.wsgi.server(eventlet.listen(('', 5005)), app)
 
-    elif algorithm == 'm4Pythag':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits, message ) = magenticPythag(start, end, originalBarriers)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
 
-    elif algorithm == 'm8':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits, message ) = magnetic8(start, end, originalBarriers)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
+if args.mode == "quick-compare":
+    print("\nRuning single test mode.", "algorithms to run:", args.grid_algorithms, "grid type:", args.grid_type, 'grid size:', args.grid_size, 'grid density:', args.grid_density, 'grid seed:', args.grid_seed, '\n')
+    headers = ['algorithm', 'maxMemory', 'visitSize', 'numberOfRightAngleTurns', 'visitExcess', 'pathSize', 'runTimeWithAnimation']    
+    tableSections = []
 
-    elif algorithm == 'm4p':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits, message ) = magnetic4Pruned(start, end, originalBarriers, maxIterations=10000000000)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
+    algorithmsToRun = args.grid_algorithms
+    if len(args.grid_algorithms) == 1 and args.grid_algorithms[0] == "*":
+        algorithmsToRun = list(algorithmCodeNameMap)
 
-    elif algorithm == 'm4ps':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits, message ) = magnetic4PrunedSpace(start, end, originalBarriers, maxIterations=10000000000)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
+    allResults = runTestCaseForAllAlgorithms ({
+        'mode': args.grid_type, 
+        'gridSize': args.grid_size,
+        'density': args.grid_density,
+        'seed': args.grid_seed,
+        'socket': None,
+        'algorithm': None,
+        'comment': False,
+        'multiple-algorithms': algorithmsToRun
+    })
 
-    elif algorithm == 'm8ps':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits, message ) = magnetic8Prunedspace(start, end, originalBarriers, maxIterations=10000000000)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
-
-    elif algorithm == 'rrt':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits ) = rrtRunner(start, end, originalBarriers, gridSize, maxIterations=gridSize*gridSize)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
-
-    elif algorithm == 'jps':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits ) = jps(start, end, originalBarriers, gridSize, None)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
-
-    elif algorithm == 'spfa':
-        tracemalloc.start()
-        tracemalloc.take_snapshot()
-        startTime = timer()
-        ( path, visits ) = spfa(start, end, originalBarriers, gridSize, None)
-        endTime = timer()
-        (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()
-
-    else:
-        startTime = 0
-        endTime = 0
-
-    if path == -1 or path == None or ( type(path)==list and not len(path) ):
-        return None
-
-    rightAngleTurns = findRightAngleTurns(path)
-    duration = endTime - startTime
-    visitLength = len(visits)-len(path) if algorithm != 'da2' else len(visits)-len(path)-1
-    results = { 'maxMemory':maxMemory, 'message':message, 'numberOfRightAngleTurns':rightAngleTurns, 'visitExcess':max(0, visitLength), 'path':path, 'duration':str(duration), 'pathSize':len(path), 'algorithm':algorithm }
-
-    if comment:
-        commentResults(results)
-
-    return results
-
-def runMultipleTest (testType='robustness', algorithms=['sh', 'shp', 'm4', 'm4Pythag', 'm8', 'm4p', 'm4ps', 'm8ps', 'lee', 'a2', 'da2'], robustnessPercentage=5, gridSize=50, extensionName='', overrideIterations=None, includeMessage=False):
-    print('running multiple...')
-    foundBarriers = {}
-    iteration = 100000 if overrideIterations == None else overrideIterations
-    metrics = [ 'algorithm', 'numberOfRightAngleTurns', 'visitExcess', 'duration', 'pathSize', 'maxMemory' ]
-
-    if includeMessage:
-        metrics.append('message')
-    csv = ','.join(metrics)
-
-    csv+=',start,end,barrierID,roundID,path'
-
-    dissmissedCsv=[]
-    bar = Bar('Processing', max=iteration)
-    while iteration > 0:
-        if testType == 'robustness':
-            (start, end, barriers) = produceRandomMaze(robustnessPercentage, gridSize)
-        elif testType == 'efficiency':
-            (start, end, barriers) = efficiencyGrid(gridSize)
-        else:
-            (start, end, barriers) = optimalityGrid(gridSize)
-
-        startText = encodeCord(start)
-        endText = encodeCord(end)
-
-        barrierString = list(barriers)
-        barrierString.sort()
-        barrierString = tuple(barrierString)
-
-        if barrierString in foundBarriers:
+    for alg in allResults:
+        response = allResults[alg]
+        if response == None:
+            print('failed run for', alg)
             continue
-        barrierID = secrets.token_urlsafe(16)
-        foundBarriers[barrierString] = {'id':barrierID, 'success':False, 'start':start, 'end':end}
-        restart = False
-        added = 0
-        for alg in algorithms:
-            try:
-                results = runSingleTest (alg, start, end, barriers, gridSize, False)
-            except:
-                restart = True
-                dissmissedCsv.append(f'{alg},{foundBarriers[barrierString]}')
-                break
-            if results != None and len(results['path']) >= 1:
-                results['path'] = encodeArray(results['path'])
-                row = ','.join( [ str(results[field]) for field in metrics ] )
-                extension = ','.join([startText, endText, barrierID, str(iteration), results['path']])
-                row += ','+extension
-                added += 1
-                csv+='\n'+row
-                foundBarriers[barrierString]['success'] = True
-            else:
-                restart = True
-                dissmissedCsv.append(f'{alg},{foundBarriers[barrierString]}')
-                break
-        if not restart:
-            row = row[:-added]
-            iteration -= 1
-            bar.next()
-    bar.finish()
 
-    with open(f'{os.path.dirname(__file__)}/results/{testType}_{extensionName}.csv', 'w+') as f:
-        f.write(csv)
+        section = []
+        for h in headers:
+            section.append(response.get(h))
+        tableSections.append(section)
 
-    with open(f'{os.path.dirname(__file__)}/results/{testType}_maps_{extensionName}.csv', 'w+') as f:
-        plain = "id,map,success,start,end"
-        for map in foundBarriers:
-            plain += f'\n{foundBarriers[map]["id"]},{encodeArray(map)},{"yes" if foundBarriers[map]["success"] else "no"},{foundBarriers[map]["start"]},{foundBarriers[map]["end"]}'
-        f.write(plain)
-
-# '''
-
-    # If you want to run multiple algorithms, side by side and get their results, use the following code
-    # Run all three 4 lines for complete test
-
-# runMultipleTest(testType='optimality', overrideIterations=100000, gridSize=gridSize, extensionName='1')
-# runMultipleTest(testType='efficiency', overrideIterations=100000, gridSize=gridSize, extensionName='1')
-# for k in range(1, 31):
-#     runMultipleTest(testType='robustness', overrideIterations=1000, robustnessPercentage=k, extensionName=f'{k}%', gridSize=gridSize)
-
-# '''
-
-'''
-
-    # If you just want to run one algorithm, uncomment of the first 3 functions
-
-    # For random sample
-    (start, end, barriers) = produceRandomMaze(1, gridSize)
-
-    # For efficiency sample
-    # (start, end, barriers) = efficiencyGrid(gridSize)
-
-    # For optimality sampe
-    # (start, end, barriers) = optimalityGrid(gridSize)
-
-    runSingleTest('mg5', start, end, barriers, animate=False) # dual version
-
-'''
-
-gridSize = 100
-seedValue = 102
-density = 30
+    print(tabulate(tableSections, headers=headers, tablefmt="grid"))
 
 
-# For random sample
-(start, end, barriers) = produceRandomMaze(density, gridSize, seedValue)
-# (start, end, barriers) = efficiencyGrid(gridSize, seedValue)
-# (start, end, barr3iers) = efficiencyGrid(gridSize, seedValue)
-# runSingleTest('rrt', start, end, barriers) # dual version
-# runSingleTest('lee', start, end, barriers) # dual version
-# runSingleTest('m4', start, end, barriers) # dual version
-# runSingleTest('a2', start, end, barriers) # dual version
-# runSingleTest('jps', start, end, barriers, comment=True) # dual version
-# runSingleTest('spfa', start, end, barriers, gridSize=gridSize, comment=True) # dual version
-# runSingleTest('da2', start, end, barriers, gridSize=gridSize, comment=True) # dual version
-runSingleTest('m4', start, end, barriers, gridSize=gridSize, comment=True) # dual version
-# runSingleTest('m4p', start, end, barriers, gridSize=gridSize, comment=True) # dual version
+if args.mode == "record-tests":
+    testCases = retrieveTestCasesFromConfig(args.test_config)
+    for test in testCases:
+        runSingleTestCase(topDirectory, test)
