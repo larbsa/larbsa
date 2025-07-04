@@ -23,6 +23,8 @@ You can run it like so:
 python3 -m animate
 ```
 
+Going to http://localhost:5005 should present a web page, where you can then visualise & compare.
+
 ## Quick Compare
 The goal of this mode is to quickly compare the performance of different algorithms.
 A table will be produced, presenting various metrics.
