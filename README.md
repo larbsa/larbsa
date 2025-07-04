@@ -38,20 +38,24 @@ python3 main.py -m quick-compare \
 --grid-algorithms '*'
 ```
 
-*--grid-density* is only needed when the --grid-type is robustness.
+*--grid-density* is only needed when the *--grid-type* is *robustness*.
 
 ## Record Tests
 The goal of this mode, is to record the performance of algorithms over a variety of different graphs.
-By defining an 'initialSeed', which is the seed to start from, we can produce a variety of different graphs.
-The tests can be reproduced using the seed and other dependencies like gridSize.
+By defining an *initialSeed*, we can produce a variety of different graphs.
+The seed, alongside fields like *gridSize* can be used to reproduce the tests.
 
 To allow for flexibility, the tests are defined in a yaml file. 
 You can find an example in *./testConfig.yaml*.
 
 The following fields are only valid for 'type' of robustness:
-    - densityStart: what density to start from
-    - densityIncrimentAfter: after N interations, the density should be increased
-    - densityIncriment: after N interations, the density should be increased by the value defined here
+    - *densityStart*: what density to start from
+    - *densityIncrimentAfter*: after N interations, the density should be increased
+    - *densityIncriment*: after N interations, the density should be increased by the value defined here
+
+In the case that the test terminates unintentionally, the 'tests can continue where they left' of as they simply
+append to the output csv files, rather than overriding them. This assuming that the name of the test does not change.
+One caveat, this does not apply to the *robustness* tests, as these add a "_N" suffix, where **N** represents the density group.
 
 You can run it like so:
 
