@@ -6,13 +6,13 @@ from automate.robustness import produceRandomMaze
 
 from algorithms.sh import heuristic
 from algorithms.shp import heuristic as singlePruned
-from algorithms.m4New_ignore import heuristic as magnetic4New
-from algorithms.m4 import heuristic as magnetic4
-from algorithms.m4Pythag import heuristic as magenticPythag
-from algorithms.m8 import heuristic as magnetic8
-from algorithms.m4p import heuristic as magnetic4Pruned
-from algorithms.m4ps import heuristic as magnetic4PrunedSpace
-from algorithms.m8ps import heuristic as magnetic8Prunedspace
+
+from algorithms.larbsa import heuristic as larbsa
+from algorithms.larbsaPrunedWithSpacing import heuristic as larbsaPrunedWithSpace
+from algorithms.larbsaPruned import heuristic as larbsaPruned
+from algorithms.larbsaPythagFitness import heuristic as larbsaPythagFitness
+from algorithms.larbsa8Options import heuristic as larbsa8Options
+from algorithms.larbsa8OptionsPrunedWithSpacing import heuristic as larbsa8Prunedspace
 
 from algorithms.lee import lee_algorithm
 from algorithms.a2 import astar_algorithm
@@ -119,7 +119,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         tracemalloc.start()
         tracemalloc.take_snapshot()
         startTime = timer()
-        ( path, visits, message ) = magnetic4(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
+        ( path, visits, message ) = larbsa(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
         endTime = timer()
         (_, maxMemory) = tracemalloc.get_traced_memory()
         tracemalloc.stop()        
@@ -128,7 +128,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         tracemalloc.start()
         tracemalloc.take_snapshot()
         startTime = timer()
-        ( path, visits, message ) = magenticPythag(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
+        ( path, visits, message ) = larbsaPythagFitness(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
         endTime = timer()
         (_, maxMemory) = tracemalloc.get_traced_memory()
         tracemalloc.stop()
@@ -137,7 +137,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         tracemalloc.start()
         tracemalloc.take_snapshot()
         startTime = timer()
-        ( path, visits, message ) = magnetic8(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
+        ( path, visits, message ) = larbsa8Options(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
         endTime = timer()
         (_, maxMemory) = tracemalloc.get_traced_memory()
         tracemalloc.stop()
@@ -146,7 +146,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         tracemalloc.start()
         tracemalloc.take_snapshot()
         startTime = timer()
-        ( path, visits, message ) = magnetic4Pruned(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
+        ( path, visits, message ) = larbsaPruned(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
         endTime = timer()
         (_, maxMemory) = tracemalloc.get_traced_memory()
         tracemalloc.stop()
@@ -155,7 +155,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         tracemalloc.start()
         tracemalloc.take_snapshot()
         startTime = timer()
-        ( path, visits, message ) = magnetic4PrunedSpace(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
+        ( path, visits, message ) = larbsaPrunedWithSpace(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
         endTime = timer()
         (_, maxMemory) = tracemalloc.get_traced_memory()
         tracemalloc.stop()
@@ -164,7 +164,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         tracemalloc.start()
         tracemalloc.take_snapshot()
         startTime = timer()
-        ( path, visits, message ) = magnetic8Prunedspace(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
+        ( path, visits, message ) = larbsa8Prunedspace(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
         endTime = timer()
         (_, maxMemory) = tracemalloc.get_traced_memory()
         tracemalloc.stop()
