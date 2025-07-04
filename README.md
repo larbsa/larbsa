@@ -63,4 +63,5 @@ You can run it like so:
 python3 -m animate --test-config testConfig.yaml
 ```
 
-When running the program, *--test-config* argument specifies the file path.
+When running the program, *--test-config* argument specifies the file path to the test config.
+Test results are stored in *./results/TEST_NAME* where *TEST_NAME* corresponds to the *name* field in the config.
