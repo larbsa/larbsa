@@ -1,10 +1,20 @@
 # Lightweight and Rapid Bidirectional Search (Larbsa)
 
+## Introduction
+This project makes use of python version *3.12.6*.
+The project includes a requirements.txt for all the dependencies and their versions.
+Before doing anything, be sure to run it with:
+
+```
+pip3 install -r requirements.txt
+```
+
 This project has 3 seperate tools which can be used to compare different algorithms.
+The entry point to the project is *./main.py*.
 
 ## Animate Mode
 The goal of this mode is to visualise different algorithms.
-The server will host a html web page on port 5005 by default.
+The server will host a html web page on port *5005* by default. **Right now, this cannot be changed**.
 You can then use the interface to compare the behaviour of the algorithms which you have selected.
 
 You can run it like so:
@@ -28,7 +38,7 @@ python3 main.py -m quick-compare \
 --grid-algorithms '*'
 ```
 
---grid-density is only needed when the --grid-type is robustness.
+*--grid-density* is only needed when the --grid-type is robustness.
 
 ## Record Tests
 The goal of this mode, is to record the performance of algorithms over a variety of different graphs.
@@ -36,7 +46,7 @@ By defining an 'initialSeed', which is the seed to start from, we can produce a 
 The tests can be reproduced using the seed and other dependencies like gridSize.
 
 To allow for flexibility, the tests are defined in a yaml file. 
-You can find an example in ./testConfig.yaml.
+You can find an example in *./testConfig.yaml*.
 
 The following fields are only valid for 'type' of robustness:
     - densityStart: what density to start from
@@ -49,4 +59,4 @@ You can run it like so:
 python3 -m animate --test-config testConfig.yaml
 ```
 
-When running the program, --test-config argument specifies the file path.
+When running the program, *--test-config* argument specifies the file path.
