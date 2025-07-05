@@ -1,3 +1,5 @@
+import psutil, os
+
 from utility.util import findRightAngleTurns, convertTo2Dp, commentResults, turnIntoKiloBytes, keysVersion, appendDataToFile, lastLineOfCSV
 from timeit import default_timer as timer
 from automate.efficiency import buildBlockMaze as efficiencyGrid
@@ -31,7 +33,7 @@ eventlet.monkey_patch()
 
 # larbsa-pythag does support socket stuff
 
-recordHeaders = ['seed', 'density', 'numberOfRightAngleTurns', 'visitSize', 'visitExcess', 'duration', 'pathSize', 'maxMemory', 'algorithm', 'message']
+recordHeaders = ['seed', 'density', 'gridSize', 'numberOfRightAngleTurns', 'visitSize', 'visitExcess', 'duration', 'pathSize', 'maxMemory', 'algorithm', 'message']
 
 algorithmCodeNameMap = {
     'da2': 'dual a star algorithm',
@@ -41,7 +43,7 @@ algorithmCodeNameMap = {
     'larbsa-pythag': '',
     'larbsa-pruned': '',
     'larbsa-pruned-spacing': '',
-    'larbsa-8-pruned-spacing': '',    
+    'larbsa-8-pruned-spacing': '',
     'rrt': 'Rapidly exploring Random Tree',
     'jps': 'Jump point search algorithm',
     'bf': 'Bellman ford algorithm (optimised for grid)',
@@ -76,6 +78,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         endTime = timer()
         (_, maxMemory) = tracemalloc.get_traced_memory()
         tracemalloc.stop()
+        # print('actually read:', maxMemory2)
 
     elif algorithm == 'a2':
         tracemalloc.start()
@@ -113,8 +116,6 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         (_, maxMemory) = tracemalloc.get_traced_memory()
         tracemalloc.stop()
 
-
-
     elif algorithm == 'larbsa':
         tracemalloc.start()
         tracemalloc.take_snapshot()
@@ -122,7 +123,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         ( path, visits, message ) = larbsa(start, end, barriers, maxIterations=maxIterationsOverride, socketInformation=socketInformation)
         endTime = timer()
         (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop()        
+        tracemalloc.stop()
 
     elif algorithm == 'larbsa-pythag':
         tracemalloc.start()
@@ -173,7 +174,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         tracemalloc.start()
         tracemalloc.take_snapshot()
         startTime = timer()
-        ( path, visits ) = rrtRunner(start, end, originalBarriers, gridSize, maxIterations=gridSize*gridSize*gridSize, socketInformation=socketInformation)
+        ( path, visits ) = rrtRunner(start, end, originalBarriers, gridSize, maxIterations=gridSize*gridSize*gridSize, socketInformation=socketInformation, stepSize=1)
         endTime = timer()
         (_, maxMemory) = tracemalloc.get_traced_memory()
         tracemalloc.stop()
@@ -186,7 +187,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         endTime = timer()
         (_, maxMemory) = tracemalloc.get_traced_memory()
         tracemalloc.stop()
-        
+
     elif algorithm == 'spfa':
         tracemalloc.start()
         tracemalloc.take_snapshot()
@@ -194,7 +195,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         ( path, visits ) = spfa(start, end, originalBarriers, gridSize, socketInformation=socketInformation)
         endTime = timer()
         (_, maxMemory) = tracemalloc.get_traced_memory()
-        tracemalloc.stop() 
+        tracemalloc.stop()
 
     elif algorithm == 'bf':
         tracemalloc.start()
@@ -209,7 +210,7 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
         startTime = 0
         endTime = 0
 
-    if path == -1 or path == None or ( type(path)==list and not len(path) ):
+    if path == -1 or path == None or ( type(path)==list and len(path) <= 1):
         if comment:
             print('path not valid for:', algorithm)
         return None
@@ -218,14 +219,15 @@ def runSingleTest (algorithm='magnetic', start=(0, 0), end=(1, 1), barriers={}, 
     duration = endTime - startTime
     pathSize = len(path) if algorithm != 'da2' else len(path)-1
 
-    results = { 
-        'maxMemory':maxMemory, 
+    results = {
+        'maxMemory':maxMemory,
         'visitSize':len(visits),
         'message':message,
         'numberOfRightAngleTurns':rightAngleTurns,
         'visitExcess':max(0, len(visits)-len(path)),
         'pathSize':pathSize,
         'algorithm':algorithm,
+        'gridSize': gridSize,
         'runTimeWithAnimation': f'{convertTo2Dp(duration*1000)} ms',
         'density': density
     }
@@ -251,7 +253,7 @@ def determineBarrierInfo (options={}):
         return optimalityGrid(options['gridSize'], options['seed'])
 
 
-# runSpecificTest runs a specific test based 
+# runSpecificTest runs a specific test based
 # on certain options
 def runASpecificTest (options={}, knownBarrierInfo=None):
 
@@ -275,7 +277,7 @@ def runAnimate (sio, threading, runningData, algorithms=[], gridSize=50, rosbust
         'density': rosbustnessLevel,
         'seed': seedValue,
         'socket': None,
-        'algorithm': "", 
+        'algorithm': "",
         'comment': False,
     }
 
@@ -312,7 +314,7 @@ def runAnimate (sio, threading, runningData, algorithms=[], gridSize=50, rosbust
     runningData['running'] = False
 
 def retrieveTestCasesFromConfig (path):
-    
+
     if type(path) != str or len(path) == 0:
         print("No path to record config")
         return []
@@ -356,12 +358,6 @@ def runTestCaseForAllAlgorithms (runOptions):
 def validateTestCaseInput (testCase):
     name = testCase.get('name')
 
-    if type(testCase.get('initialSeed')) != int:
-        return f"for: '{name}', initialSeed must be defined so we know which seed to start from"
-
-    if type(testCase.get('seedIncriment')) != int:
-        return f"for: '{name}', seedIncriment not defined, needed to change the graph each time"
-
     if type(testCase.get('numberOfIterations')) != int:
         return f"for: '{name}', numberOfIterations not defined"
 
@@ -374,20 +370,20 @@ def validateTestCaseInput (testCase):
     testType = testCase.get('type')
     if testType not in ["efficiency", "robustness", "optimality"]:
         return f"for: '{name}', unknown test type"
-    
+
     if testType == "robustness":
         density = testCase.get('densityStart')
         if type(density) != int or density < 0:
-            return f"for: '{name}', density must be defined and must be more than 0" 
+            return f"for: '{name}', density must be defined and must be more than 0"
 
         densityIncriment = testCase.get('densityIncriment')
         if type(densityIncriment) != int or densityIncriment < 0:
-            return f"for: '{name}', densityIncriment must be defined and must be more than 0" 
+            return f"for: '{name}', densityIncriment must be defined and must be more than 0"
 
         densityIncrimentAfter = testCase.get('densityIncrimentAfter')
         if type(densityIncrimentAfter) != int or densityIncrimentAfter < 0:
-            return f"for: '{name}', densityIncrimentAfter must be defined and must be more than 0" 
-    
+            return f"for: '{name}', densityIncrimentAfter must be defined and must be more than 0"
+
     return None
 
 def runSingleTestCase (topDirectory, testCase):
@@ -409,12 +405,16 @@ def runSingleTestCase (topDirectory, testCase):
     algorithms = testCase.get('multiple-algorithms')
     skip = testCase.get('skip')
 
+    if seed == None or seedIncriment == None:
+        seed = None
+        seedIncriment = None
+
     if skip:
         print('skipped test case with name:', name)
         return
 
     if type(algorithms) != list:
-        algorithms = list(algorithmCodeNameMap) 
+        algorithms = list(algorithmCodeNameMap)
 
 
     isRobustness = testType == "robustness"
@@ -432,9 +432,10 @@ def runSingleTestCase (topDirectory, testCase):
     try:
         if lastLine != None:
             lastSeed = int(lastLine.get('seed'))
-            i = int((lastSeed - seed) / seedIncriment)
-            seed = lastSeed + seedIncriment
-            density = int(density.get('density'))
+            if lastSeed != "None":
+                i = int((lastSeed - seed) / seedIncriment)
+                seed = lastSeed + seedIncriment
+                density = int(density.get('density'))
             print('restarting test from seed:', seed, 'and the', i, 'iteration')
     except:
         pass
@@ -467,8 +468,9 @@ def runSingleTestCase (topDirectory, testCase):
             for column in recordHeaders:
                 rowData.append(f'{algData.get(column)}')
             sections.append(rowData)
-        
-        seed += seedIncriment
+
+        if seedIncriment != None:
+            seed += seedIncriment
 
         if not foundErrors:
             for s in sections:

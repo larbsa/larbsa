@@ -92,7 +92,7 @@ def identifyMetrics (columnValues):
     return (meanValue, standardDeviation, medianValue)
 
 def appendMetricToRobustnessParent (parentObject, algorithm, metricField, metricValue):
-    
+
     if algorithm not in parentObject:
         parentObject[algorithm] = {}
     if metricField not in parentObject[algorithm]:
@@ -122,15 +122,15 @@ def condenseRobustnessTables (pathPrefix, range_=(1, 31), useMetric='mean', drop
 
 def drawGraph (index, metric, tables, include=[]):
     plt.figure(index)
-    
+
     for alg in tables:
-        
+
         plt.rcParams["figure.figsize"] = (20,5)
         plt.rcParams['font.size'] = 18
 
         if alg not in include:
             continue
-        
+
         plt.plot([x for x in range(1, 31)], tables[alg][metric], label = alg )
 
     plt.xlabel("Ratio of Obstacles to Total nodes in percentages (%)")
@@ -149,7 +149,7 @@ def retrieveMergeTypeCount (path, algorithmKey):
             sections['trail']+=1
         elif 'MERGEDIRECT' in val:
             sections['direct']+=1
-    
+
     return sections
 
 def retrieveMergeTypeCountForAll (pathPrefix, algorithmKey, range_=(1, 31),):
@@ -157,7 +157,7 @@ def retrieveMergeTypeCountForAll (pathPrefix, algorithmKey, range_=(1, 31),):
     sectionValues = {}
 
     for i in range(range_[0], range_[1]):
-        sections = retrieveMergeTypeCount(f'{pathPrefix}_{1}.csv', algorithmKey)
+        sections = retrieveMergeTypeCount(f'{pathPrefix}_{i}.csv', algorithmKey)
         for s in sections:
             if s not in sectionValues:
                 sectionValues[s] = []
@@ -167,10 +167,10 @@ def retrieveMergeTypeCountForAll (pathPrefix, algorithmKey, range_=(1, 31),):
 
 def drawMergeInfo (mergeInfo):
     for s in mergeInfo:
-        
+
         plt.rcParams["figure.figsize"] = (20,5)
         plt.rcParams['font.size'] = 18
-        
+
         plt.plot([x for x in range(1, 31)], mergeInfo[s], label = s)
 
     plt.xlabel("Density")
@@ -178,6 +178,3 @@ def drawMergeInfo (mergeInfo):
     plt.ylabel("count")
     plt.legend()
     plt.grid(True)
-
-# sectionVals = retrieveMergeTypeCountForAll ("./results/robustnessTest", 'larbsa', range_=(1, 31))
-# print(sectionVals)

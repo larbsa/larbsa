@@ -4,11 +4,8 @@ import matplotlib.pyplot as plt
 import time
 import sys
 
-def distance(n1, n2):
-    return math.hypot(math.floor(n1['x'] - n2['x']), math.floor(n1['y'] - n2['y']))
-
 def getRandomPoint(limit):
-    return math.floor(random.uniform(0, limit))
+    return random.uniform(0, limit)
 
 def getRandomPosition(x_limit, y_limit):
     x = getRandomPoint(x_limit)
@@ -75,25 +72,55 @@ def findNearestParent (parents, startNode, node):
 
     return closestNode
 
-def rrt (parentBlock, start, end, obstacles, gridSize, maxIterations=1000000000, socketInformation=None):
+def projectNextPoint (parent, randomisedChild, stepSize):
+    horizontal = randomisedChild[0] - parent[0]
+    vertical = randomisedChild[1] - parent[1]
+
+    theta = 0 if vertical == 0 else math.atan(horizontal/vertical)
+    correspondingH = round(parent[0] + math.cos(theta) * stepSize)
+    correspondingV = round(parent[1] + math.sin(theta) * stepSize)
+    return (correspondingH, correspondingV)
+
+# ignoring this function as we will make step size 1 for tests, otherwise tests
+# will take longer than necessary to run - as rrt may not converge within maxIterations
+# which would cause tests to restart - prolonging tests longer than needed. But if you are okay with this
+# then feel free to add it back in, also need to uncomment lines 111 and 112 (assuming no changes to the file)
+# def obstacleInWay (parent, child, maxStepSize, parentBlock, obstacles, gridSize):
+#     i = 1
+#     nextChild = parent
+#     # move 1 node at a time, in the path direction, ensuring the next node is not an obstacle
+#     while i <= maxStepSize and nextChild != child:
+#         nextChild = projectNextPoint (parent, child, i)
+#         if not nodeIsValid(parentBlock, nextChild, obstacles, gridSize, gridSize):
+#             return True
+#         i+=1
+#     return False
+
+def rrt (parentBlock, start, end, obstacles, gridSize, maxIterations=1000000000, socketInformation=None, stepSize=1):
 
     while maxIterations >= 0:
         maxIterations-=1
         newRandomPosition = getRandomPosition(gridSize, gridSize)
+
         parentNode = findNearestParent(parentBlock, start, newRandomPosition)
-        valid = nodeIsValid(parentBlock, newRandomPosition, obstacles, gridSize, gridSize)
-        if not valid:
+        shortenedRandomPosition = projectNextPoint(parentNode, newRandomPosition, stepSize)
+
+        if not nodeIsValid(parentBlock, shortenedRandomPosition, obstacles, gridSize, gridSize):
             continue
-        parentBlock[newRandomPosition] = parentNode
-        sendData(socketInformation, parentBlock, start, newRandomPosition)
-        if newRandomPosition == end:
+
+        # if obstacleInWay (parentNode, shortenedRandomPosition, stepSize, parentBlock, obstacles, gridSize):
+        #     continue
+
+        parentBlock[shortenedRandomPosition] = parentNode
+        sendData(socketInformation, parentBlock, start, shortenedRandomPosition)
+        if shortenedRandomPosition == end:
             break
 
     return {}, end
 
 
-def rrtRunner (start, end, obstacles, gridSize, maxIterations, socketInformation=None):
+def rrtRunner (start, end, obstacles, gridSize, maxIterations, socketInformation=None, stepSize=1):
     parentBlock = {}
-    rrt(parentBlock, start, end, obstacles, gridSize, maxIterations, socketInformation)
+    rrt(parentBlock, start, end, obstacles, gridSize, maxIterations, socketInformation, stepSize)
     path = findPath (parentBlock, start, end)
     return path, parentBlock
