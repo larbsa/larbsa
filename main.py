@@ -63,7 +63,7 @@ if args.mode == "animate":
         print('disconnect ', sid)
 
     if __name__ == '__main__':
-        eventlet.wsgi.server(eventlet.listen(('', 5005)), app)
+        eventlet.wsgi.server(eventlet.listen(('127.0.0.1', 5005)), app)
 
 
 if args.mode == "quick-compare":

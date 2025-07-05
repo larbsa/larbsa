@@ -62,7 +62,7 @@ One caveat, this does not apply to the *robustness* tests, as these add a "_N" s
 You can run it like so:
 
 ```
-python3 -m animate --test-config testConfig.yaml
+python3 -m record-tests --test-config testConfig.yaml
 ```
 
 When running the program, *--test-config* argument specifies the file path to the test config.
